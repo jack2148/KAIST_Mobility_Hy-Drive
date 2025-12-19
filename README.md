@@ -2,9 +2,9 @@
 
 ## 개요
 
-**Mobility Challenge Simulator**는 2025 모빌리티 챌린지 경진대회를 위해 개발된 시뮬레이션 플랫폼이다. 대회장 환경을 정밀하게 재현하고, 다수의 **CAV(Connected and Automated Vehicle)** 및 **HV(Human-driven Vehicle)** 가 공존하는 상황에서 알고리즘을 설계·검증할 수 있도록 지원한다.
+**Mobility Challenge Simulator**는 2025 모빌리티 챌린지 경진대회를 위해 개발된 시뮬레이션 플랫폼이다. 대회장 환경을 재현하고, 다수의 **CAV(Connected and Autonomous Vehicle)** 및 **HV(Human-driven Vehicle)** 가 공존하는 상황에서 CAV 주행 알고리즘을 개발할 수 있도록 지원한다.
 
-본 시뮬레이터는 ROS 2 기반으로 동작하며, 실제 대회 운영 환경과의 높은 정합성을 목표로 설계되었다. 참가자는 이를 통해 멀티 에이전트 주행 알고리즘을 개발할 수 있다.
+본 시뮬레이터는 ROS 2 기반으로 동작하며, 개발된 알고리즘이 실제 대회 운영 환경에 추가 수정이 거의 없이 적용될 수 있도록 높은 호환성을 목표로 제작되었다. 참가자는 이를 통해 대회장을 방문하지 않더라도 멀티 에이전트 주행 알고리즘을 개발할 수 있다.
 
 ![Simulator Overview](images/Simulator_gif.gif)
 
@@ -88,10 +88,4 @@ $ ros2 topic pub -r 10 /Accel geometry_msgs/msg/Accel \
   
   [매뉴얼 다운로드](https://drive.google.com/file/d/1koGnXS7wrxP_pSGpCxh8SZqol4rqMsX-/view?usp=sharing)
 
----
 
-## 활용 시나리오
-
-- 다수의 CAV/HV가 혼재된 교통 환경에서의 알고리즘 검증
-- ROS 2 기반 멀티 에이전트 통신 및 협력 주행 실험
-- 대회 환경과 동일한 조건에서의 사전 성능 평가
