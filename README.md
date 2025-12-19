@@ -83,9 +83,8 @@ $ ros2 topic pub -r 10 /Accel geometry_msgs/msg/Accel \
 
 ### HV 주행 파라미터 설정
 
-HV 주행 파라미터는 'src/hv_handler/config/hv_params.yaml' 파일에서 관리된다.
+HV 주행 파라미터는 **'src/hv_handler/config/hv_params.yaml'** 파일에서 관리된다.
 
-> ⚠️ 본 파일은 런타임에 로드된다.  
 > `colcon build --symlink-install` 옵션으로 빌드한 경우, YAML 파일 수정 후 **재빌드 없이 노드 재실행만으로** 변경 사항이 반영된다.
 
 - **`problem_two`, `problem_three`**  
