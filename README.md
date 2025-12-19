@@ -81,7 +81,7 @@ $ ros2 topic pub -r 10 /Accel geometry_msgs/msg/Accel \
 - **ANG_VEL**: $\omega_z$, 차량 중심 각속도
 
 
-### HV 주행 파라미터 설정
+### 4. HV 주행 파라미터 설정
 
 HV 주행 파라미터는 `src/hv_handler/config/hv_params.yaml` 파일에서 관리된다.
 
