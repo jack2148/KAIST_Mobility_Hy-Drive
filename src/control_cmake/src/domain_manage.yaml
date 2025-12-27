@@ -1,0 +1,26 @@
+name: domain_manage
+from_domain: 100    # 기본값: Main에서 보냄 (공통)
+# to_domain은 토픽마다 다르므로 여기서 공통 설정하지 않거나, 가장 많은 쪽을 설정
+
+topics:
+  # 1. CAV 01 (/CAV_01/cmd_stop -> Domain 1)
+  /CAV_01/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 1
+
+
+  # 2. CAV 02 (/CAV_02/cmd_stop -> Domain 2)
+  /CAV_02/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 2
+ 
+
+  # 3. CAV 03 (/CAV_03/cmd_stop -> Domain 3)
+  /CAV_03/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 3
+
+  /CAV_03/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 4
+  
