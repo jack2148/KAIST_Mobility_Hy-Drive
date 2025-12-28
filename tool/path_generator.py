@@ -57,9 +57,9 @@ def generate_path_from_nodes(
 
 # ===== Example Usage =====
 if __name__ == "__main__":
-    nodes = [20, 23, 26, 29, 2, 4, 7, 10, 13, 14, 17, 20] # <-- modify path if needed
+    nodes = [21, 51, 46, 40, 63, 34, 27, 28, 31, 1, 3, 6, 7, 10, 9,56, 59, 18, 21] # <-- modify path if needed
     waypoint_dir = "waypoint"  
-    output_csv = "hv_roundabout.csv"
+    output_csv = "p1_1_path.csv"
 
     generate_path_from_nodes(nodes, waypoint_dir, output_csv)
 
