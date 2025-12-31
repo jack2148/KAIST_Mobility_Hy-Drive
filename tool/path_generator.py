@@ -57,10 +57,10 @@ def generate_path_from_nodes(
 
 # ===== Example Usage =====
 if __name__ == "__main__":
-    # nodes = [18, 21, 51, 46, 40, 63, 34, 27, 28, 31, 1, 3, 6, 7, 10, 9, 56, 59, 18] # CAV1
-    nodes = [60, 52, 24, 27, 30, 1, 3, 6, 44, 63, 39, 49, 55, 12, 15, 60]
+    nodes = [18, 21, 51, 46, 40, 63, 34, 27, 28, 31, 1, 3, 7, 10, 9, 56, 59, 18] # CAV1
+    # nodes = [60, 52, 24, 27, 30, 1, 3, 6, 44, 63, 39, 49, 55, 12, 15, 60] # CAV2
     waypoint_dir = "waypoint"  
-    output_csv = "p1_2.csv"
+    output_csv = "p1_12.csv"
 
     generate_path_from_nodes(nodes, waypoint_dir, output_csv)
 
