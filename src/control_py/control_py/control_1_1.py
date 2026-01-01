@@ -22,13 +22,13 @@ class PathTrackerNode(Node):
         self.waypoints = df[['X', 'Y']].to_numpy()
         
         # === 속도 제어 파라미터 ===
-        self.max_speed = 0.3  # 직진 속력 (최대 속력)
-        self.min_speed = 0.1  # 회전 속력 (최소 속력)
+        self.max_speed = 1.5  # 직진 속력 (최대 속력)
+        self.min_speed = 0.8  # 회전 속력 (최소 속력)
         self.steer_threshold_low = np.deg2rad(10) # 이 각도 이하면 최대 속도
         self.steer_threshold_high = np.deg2rad(25) # 이 각도 이상이면 최소 속도
 
         # 경로 탐색 최적화를 위한 인덱스 저장
-        self. current_pose_idx = 0 # 현재 위치 인덱스
+        self.current_pose_idx = 0 # 현재 위치 인덱스
         self.is_initialized = False # 초기 위치 탐색 여부
 
     def listener_callback(self, msg):
