@@ -20,7 +20,8 @@ topics:
     type: std_msgs/msg/Bool
     to_domain: 3
 
-  /CAV_03/cmd_stop:
+  # 4. CAV 04 (/CAV_04/cmd_stop -> Domain 4)
+  /CAV_04/cmd_stop:
     type: std_msgs/msg/Bool
     to_domain: 4
   

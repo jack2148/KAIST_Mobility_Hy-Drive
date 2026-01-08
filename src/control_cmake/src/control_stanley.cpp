@@ -39,13 +39,13 @@ public:
 
         // 비상 정지 명령 수신
         sub_stop_cmd_ = this->create_subscription<std_msgs::msg::Bool>(
-            "cmd_stop", qos_profile, 
+            "/cmd_stop", qos_profile, 
             [this](const std_msgs::msg::Bool::SharedPtr msg) {
                 this->stop_signal_ = msg->data; // True면 정지 
             });
 
         // === 파라미터 설정 ===
-        this->declare_parameter("csv_path", "tool/p1_1.csv");
+        this->declare_parameter("csv_path", "tool/cav1.csv");
         this->declare_parameter("k_gain", 2.0);          // 2.0 ~ 2.5사이 어딘가로 맞추면 될 듯?
         this->declare_parameter("max_steer", 0.9);       // 최대 조향각 (rad) - 약 50도
         this->declare_parameter("target_speed", 1.5);    // 기본 주행 속도 (m/s)
@@ -207,7 +207,7 @@ private:
         pub_accel_->publish(msg_out);
 
         // 디버깅 로그
-        RCLCPP_INFO(this->get_logger(), "CTE: %.2f | Steer(rad): %.2f | YawRate: %.2f", cte, steer_angle, yaw_rate);
+        //RCLCPP_INFO(this->get_logger(), "CTE: %.2f | Steer(rad): %.2f | YawRate: %.2f", cte, steer_angle, yaw_rate);
     }
 
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr sub_pose_;
