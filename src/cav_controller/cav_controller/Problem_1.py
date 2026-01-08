@@ -42,11 +42,11 @@ class StanleyFollower(Node):
         # ✅ 18->21로 시작, 59->18로 돌아와서 한 바퀴(끝점=18)
         self.declare_parameter(
             "route_nodes",
-            [18, 21, 51, 46, 40, 63, 34, 27, 31, 1, 3, 7, 9, 56, 59, 18],
+            [24, 37, 39, 49],
         )
 
         # 주행/차량 파라미터
-        self.declare_parameter("speed", 2.0)          # [m/s]
+        self.declare_parameter("speed", 0.5)          # [m/s]
         self.declare_parameter("wheelbase", 0.211)    # [m] 앞/뒤 축거리(휠베이스)
         self.declare_parameter("L_front", 0.15)       # [m] 전륜점(가상) 오프셋
         self.declare_parameter("heading_lookahead", 3)
