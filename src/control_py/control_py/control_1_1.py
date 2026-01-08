@@ -17,12 +17,12 @@ class PathTrackerNode(Node):
         self.publisher_ = self.create_publisher(Accel, '/Accel', qos_profile_sensor_data)
         
         # CSV 경로 파일 로드
-        csv_path = 'tool/p1_1.csv'
+        csv_path = 'tool/cav1.csv'
         df = pd.read_csv(csv_path)
         self.waypoints = df[['X', 'Y']].to_numpy()
         
         # === 속도 제어 파라미터 ===
-        self.max_speed = 0.3  # 직진 속력 (최대 속력)
+        self.max_speed = 1.0  # 직진 속력 (최대 속력)
         self.min_speed = 0.1  # 회전 속력 (최소 속력)
         self.steer_threshold_low = np.deg2rad(10) # 이 각도 이하면 최대 속도
         self.steer_threshold_high = np.deg2rad(25) # 이 각도 이상이면 최소 속도

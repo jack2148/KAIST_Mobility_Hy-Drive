@@ -52,38 +52,10 @@ def generate_launch_description():
         ]
     )
 
-    # 4. Stanley 노드 cav3 (ID 3)
-    stanley_cav_03 = Node(
-        package='control_cmake',
-        executable='stanley_node',
-        name='stanley_controller_02', 
-        namespace='CAV_03',         
-        output='screen',
-        parameters=[{'csv_path': 'tool/cav3.csv'}],
-        additional_env={'ROS_DOMAIN_ID': '3'},
-        remappings=[
-            ('/cmd_stop', '/CAV_03/cmd_stop')
-        ]
-    )
-
-    # 5. Stanley 노드 cav4 (ID 4)
-    stanley_cav_04 = Node(
-        package='control_cmake',
-        executable='stanley_node',
-        name='stanley_controller_04', 
-        namespace='CAV_04',           
-        output='screen',
-        parameters=[{'csv_path': 'tool/cav4.csv'}],
-        additional_env={'ROS_DOMAIN_ID': '4'},
-        remappings=[
-            ('/cmd_stop', '/CAV_04/cmd_stop')
-        ]
-    )
+   
     return LaunchDescription([
         domain_bridge,
         main_control,
         stanley_cav_01,
         stanley_cav_02,
-        stanley_cav_03,
-        stanley_cav_04,
     ])

@@ -48,7 +48,7 @@ public:
         this->declare_parameter("csv_path", "tool/cav1.csv");
         this->declare_parameter("k_gain", 2.0);          // 2.0 ~ 2.5사이 어딘가로 맞추면 될 듯?
         this->declare_parameter("max_steer", 0.9);       // 최대 조향각 (rad) - 약 50도
-        this->declare_parameter("target_speed", 1.5);    // 기본 주행 속도 (m/s)
+        this->declare_parameter("target_speed", 2.0);    // 기본 주행 속도 (m/s)
         this->declare_parameter("center_to_front", 0.17);// 차량 중심에서 전륜까지 거리 (m)
         this->declare_parameter("wheelbase", 0.33);      // [추가] 축거 (Wheelbase) (m)
         this->declare_parameter("steer_gain", 1.0);      // [변경] 각속도 변환을 하므로 gain은 1.0 추천 (필요 시 조절)
