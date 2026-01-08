@@ -342,8 +342,7 @@ private:
             if (is_blocked_by_hv(target)) continue;
 
             // 여기까지 왔으면 'target'도 지금 당장 들어갈 수 있는 상태임.
-            // 둘 중 하나만 들어가야 하므로, 거리와 ID로 승자를 정함.
-
+            // 둘 중 하나만 들어가야 하므로, 거리와 ID로 승자를 정함. 
             // 상대가 더 가까우면 내가 양보
             if (t_dist_sq < dist_sq - 0.01) return true;
 
