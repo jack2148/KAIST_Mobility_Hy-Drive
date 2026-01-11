@@ -21,6 +21,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -38,7 +39,25 @@ add_executable(main_controller src/main.cpp)
 ament_target_dependencies(main_controller
   rclcpp
   geometry_msgs
-  std_msgs       # [필수] Bool 메시지 사용
+  std_msgs      
+)
+
+add_executable(stanley_node2 src/control_stanley2.cpp)
+ament_target_dependencies(stanley_node2
+  rclcpp
+  geometry_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+  nav_msgs
+)
+
+add_executable(main_controller2 src/main2.cpp)
+ament_target_dependencies(main_controller2
+  rclcpp
+  geometry_msgs
+  std_msgs       
+  nav_msgs
 )
 
 
@@ -62,6 +81,8 @@ endif()
 install(TARGETS
   stanley_node
   main_controller
+  stanley_node2
+  main_controller2
   DESTINATION lib/${PROJECT_NAME}
 )
 

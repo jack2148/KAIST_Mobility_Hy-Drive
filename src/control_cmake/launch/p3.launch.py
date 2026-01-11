@@ -31,10 +31,12 @@ def generate_launch_description():
         name='stanley_controller_01', # 이름 구분
         namespace='CAV_01',           # 토픽 구분 (/CAV_01/...)
         output='screen',
-        parameters=[{'csv_path': 'tool/cav1p3.csv'}],
+        parameters=[{'original_way_path': 'tool/cav1p3.csv'},
+                        {'inside_way_path': 'tool/cav1p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '1'},
         remappings=[
-            ('/cmd_stop', '/CAV_01/cmd_stop')
+            ('/cmd_stop', '/CAV_01/cmd_stop'),
+            ('/change_waypoint', '/CAV_01/change_waypoint'),
         ]
     )
 
@@ -45,10 +47,12 @@ def generate_launch_description():
         name='stanley_controller_02', 
         namespace='CAV_02',           
         output='screen',
-        parameters=[{'csv_path': 'tool/cav2p3.csv'}],
+        parameters=[{'original_way_path': 'tool/cav2p3.csv'},
+                        {'inside_way_path': 'tool/cav2p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '2'},
         remappings=[
-            ('/cmd_stop', '/CAV_02/cmd_stop')
+            ('/cmd_stop', '/CAV_02/cmd_stop'),
+            ('/change_waypoint', '/CAV_02/change_waypoint'),
         ]
     )
 
@@ -59,10 +63,12 @@ def generate_launch_description():
         name='stanley_controller_02', 
         namespace='CAV_03',         
         output='screen',
-        parameters=[{'csv_path': 'tool/cav3.csv'}],
+        parameters=[{'original_way_path': 'tool/cav3p3.csv'},
+                        {'inside_way_path': 'tool/cav3p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '3'},
         remappings=[
-            ('/cmd_stop', '/CAV_03/cmd_stop')
+            ('/cmd_stop', '/CAV_03/cmd_stop'),
+            ('/change_waypoint', '/CAV_03/change_waypoint'),
         ]
     )
 
@@ -73,10 +79,12 @@ def generate_launch_description():
         name='stanley_controller_04', 
         namespace='CAV_04',           
         output='screen',
-        parameters=[{'csv_path': 'tool/cav4.csv'}],
+        parameters=[{'original_way_path': 'tool/cav4p3.csv'},
+                        {'inside_way_path': 'tool/cav4p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '4'},
         remappings=[
-            ('/cmd_stop', '/CAV_04/cmd_stop')
+            ('/cmd_stop', '/CAV_04/cmd_stop'),
+            ('/change_waypoint', '/CAV_04/change_waypoint'),
         ]
     )
     return LaunchDescription([
