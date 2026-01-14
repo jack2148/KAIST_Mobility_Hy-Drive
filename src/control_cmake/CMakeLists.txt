@@ -34,6 +34,14 @@ ament_target_dependencies(stanley_node
   tf2_geometry_msgs
 )
 
+add_executable(stanley_p2_node src/control_p2.cpp)
+ament_target_dependencies(stanley_p2_node rclcpp geometry_msgs std_msgs)
+
+install(TARGETS
+  stanley_p2_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 add_executable(main_controller src/main.cpp)
 ament_target_dependencies(main_controller
   rclcpp
@@ -41,7 +49,18 @@ ament_target_dependencies(main_controller
   std_msgs       # [필수] Bool 메시지 사용
 )
 
+add_executable(main_p2_controller src/main_p2.cpp)
 
+ament_target_dependencies(main_p2_controller
+  rclcpp
+  geometry_msgs
+  std_msgs
+)
+
+install(TARGETS
+  main_p2_controller
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
