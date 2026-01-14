@@ -59,13 +59,26 @@ def generate_path_from_nodes(
 if __name__ == "__main__":
     # nodes = [18, 21, 51, 46, 40, 63, 34, 27, 31, 1, 3, 7, 9, 56, 59, 18] # CAV1 p1
     # nodes = [15, 60, 52, 24, 27, 30, 1, 3, 6, 44, 63, 39, 49, 55, 12, 15] # CAV2 p1
+<<<<<<< HEAD
     nodes = [22, 25, 28, 31 ,1, 3,5,8,11,16,19 ] # CAV1 p2
+=======
+    # nodes = [18, 21, 51, 46, 41, 43, 9, 56, 59, 18] # CAV1 p3
+>>>>>>> 363868f1c1dce6f8336072a2e9992abcef38b1ef
     # nodes = [15, 60, 52, 24, 37, 38, 49, 55, 12, 15] # CAV2 p3
     # nodes = [58, 19, 22, 25, 36, 38, 48, 58] # CAV3
     # nodes = [11, 16, 61, 47, 41, 42, 8, 11] #CAV4
-    # nodes = [38, 41, 62, 38] # rotation_big
+    # nodes = [38, 41, 62, 38] # rotation_outside
+    # nodes = [46, 40, 43] # CAV1 inside
+    nodes = [37, 39, 49] # CAV2 inside
+    # nodes = [36, 39, 48] # CAV3 inside
+    # nodes = [47, 40, 42] # CAV4 inside
+    # nodes = [39, 40, 63, 39] # roataion_inside
     waypoint_dir = "waypoint"  
+<<<<<<< HEAD
     output_csv = "fastp2.csv"
+=======
+    output_csv = "cav2p3_inside.csv"
+>>>>>>> 363868f1c1dce6f8336072a2e9992abcef38b1ef
 
     generate_path_from_nodes(nodes, waypoint_dir, output_csv)
 
