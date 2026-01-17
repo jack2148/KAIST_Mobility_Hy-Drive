@@ -149,7 +149,6 @@ private:
         // Inside 경로 요청이 왔고, 현재 Inside가 아니며, 데이터가 있을 때만 전환
         if (request_inside) {
             if (!is_inside_path_active_ && !waypoints_inside_.empty()) {
-                RCLCPP_INFO(this->get_logger(), "%s[SWITCH] Switching to INSIDE PATH%s", ANSI_CYAN.c_str(), ANSI_RESET.c_str());
                 is_inside_path_active_ = true;
                 current_waypoints_ = &waypoints_inside_;
                 // 전체 검색 방식을 사용하므로 인덱스 초기화 불필요
@@ -170,7 +169,6 @@ private:
             stop_msg.linear.x = 0.0;  
             stop_msg.angular.z = 0.0; 
             pub_accel_->publish(stop_msg);
-            RCLCPP_INFO_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "PAUSED by Main Controller");
             return; 
         }
 
@@ -206,7 +204,6 @@ private:
         // Inside 경로의 끝부분(마지막 5개)에 도달하면 Original로 자동 복귀
         if (is_inside_path_active_) {
             if (nearest_idx >= (int)current_waypoints_->size() - 5) { 
-                RCLCPP_INFO(this->get_logger(), "%s[RETURN] End of Inside Path. Returning to ORIGINAL.%s", ANSI_YELLOW.c_str(), ANSI_RESET.c_str());
                 is_inside_path_active_ = false;
                 current_waypoints_ = &waypoints_original_;
                 return; // 이번 턴 종료하고 다음 턴에 Original 경로로 다시 계산

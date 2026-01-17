@@ -12,14 +12,6 @@
 #include <map>
 #include <deque> 
 
-// 로그 색상 정의
-const std::string ANSI_RESET   = "\033[0m";
-const std::string ANSI_BLUE    = "\033[34m";
-const std::string ANSI_RED     = "\033[31m";
-const std::string ANSI_CYAN    = "\033[36m";
-const std::string ANSI_YELLOW  = "\033[33m";
-const std::string ANSI_GREEN   = "\033[32m";
-
 // 2D 벡터 연산 및 OBB(Oriented Bounding Box) 충돌 감지를 위한 네임스페이스
 namespace Geo {
     // 기본적인 벡터 연산을 위한 구조체
@@ -150,14 +142,12 @@ private:
     void update_conflict_status(const std::string& stopped_cav, const std::string& cause_vehicle) {
         if (conflict_info_.count(stopped_cav) && conflict_info_[stopped_cav] == cause_vehicle) return; // 이미 같은 상황이 저장되어있으면 무시
         conflict_info_[stopped_cav] = cause_vehicle;
-    
     }
 
     // 차량 정지상황 해소 시 conflict_info에서 제거
     void clear_conflict_status(const std::string& stopped_cav) {
         if (conflict_info_.count(stopped_cav)) {
-            RCLCPP_INFO(get_logger(), "%s[CONFLICT END] %s resumed (was stopped by %s)%s",
-                        ANSI_CYAN.c_str(), stopped_cav.c_str(), conflict_info_[stopped_cav].c_str(), ANSI_RESET.c_str());
+            // [로그 제거됨] 충돌 해소 로그 삭제
             conflict_info_.erase(stopped_cav);
         }
     }
@@ -337,21 +327,13 @@ private:
             if (vehicles_.count(tid) && vehicles_.at(tid).active) {
                 const auto& target = vehicles_.at(tid);
                 bool target_inside = (target.pos.x >= x_min && target.pos.x <= x_max &&
-                                     target.pos.y >= y_min && target.pos.y <= y_max);
+                                      target.pos.y >= y_min && target.pos.y <= y_max);
                 // target이 이미 사지교차로 내부에 있는 경우에만
                 if (target_inside) {
                     bool target_is_top = (target.pos.y > fourway_center_.y);
                     bool target_is_right = (target.pos.x > fourway_center_.x);
                     bool target_approaching = is_approaching(target, fourway_center_);
                     
-                    /*
-                    bool is_TB_distinct = (am_i_top != target_is_top);
-                    bool is_LR_distinct = (am_i_right != target_is_right);
-                    if (!(is_TB_distinct || is_LR_distinct)) {
-                        return true;
-                    }
-                    */
-
                     // cav1이 정지해야하는 경우 : 상/하 교차점
                     if (my_cav.id == "CAV_01"){
                         if (am_i_top && !target_is_right && target_approaching) return true;
@@ -647,20 +629,12 @@ private:
                 clear_conflict_status(my_id);
             }
 
+            // [로그 로직 제거됨] 상태 변경 시 충돌 원인 업데이트만 수행
             if (my_cav.is_stopped != my_cav_stop) {
                 if (my_cav_stop) {
-                    RCLCPP_INFO(get_logger(), "%s[%s] [%s] -> [STOP] %s%s",
-                                ANSI_RED.c_str(), zone.c_str(), my_id.c_str(), log_msg.c_str(), ANSI_RESET.c_str());
                     update_conflict_status(my_id, cause_id);
-                } else {
-                    if (deadlock_active) {
-                        RCLCPP_INFO(get_logger(), "%s[%s] [DEADLOCK RESOLVED] %s -> [GO]%s",
-                                    ANSI_GREEN.c_str(), zone.c_str(), my_id.c_str(), ANSI_RESET.c_str());
-                    } else {
-                        RCLCPP_INFO(get_logger(), "%s[%s] [%s] -> [GO]%s",
-                                    ANSI_BLUE.c_str(), zone.c_str(), my_id.c_str(), ANSI_RESET.c_str());
-                    }
-                }
+                } 
+                // else: 재시작 시 별도 로직 없음 (로그만 있었음)
             } else if (my_cav_stop) {
                 update_conflict_status(my_id, cause_id);
             }
