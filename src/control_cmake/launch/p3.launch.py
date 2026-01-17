@@ -34,10 +34,7 @@ def generate_launch_description():
         parameters=[{'original_way_path': 'tool/cav1p3.csv'},
                         {'inside_way_path': 'tool/cav1p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '1'},
-        remappings=[
-            ('/cmd_stop', '/CAV_01/cmd_stop'),
-            ('/change_waypoint', '/CAV_01/change_waypoint'),
-        ]
+      
     )
 
     # 3. Stanley 노드 cav2 (ID 2)
@@ -50,26 +47,20 @@ def generate_launch_description():
         parameters=[{'original_way_path': 'tool/cav2p3.csv'},
                         {'inside_way_path': 'tool/cav2p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '2'},
-        remappings=[
-            ('/cmd_stop', '/CAV_02/cmd_stop'),
-            ('/change_waypoint', '/CAV_02/change_waypoint'),
-        ]
+        
     )
 
     # 4. Stanley 노드 cav3 (ID 3)
     stanley_cav_03 = Node(
         package='control_cmake',
         executable='stanley_node',
-        name='stanley_controller_02', 
+        name='stanley_controller_03', 
         namespace='CAV_03',         
         output='screen',
         parameters=[{'original_way_path': 'tool/cav3p3.csv'},
                         {'inside_way_path': 'tool/cav3p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '3'},
-        remappings=[
-            ('/cmd_stop', '/CAV_03/cmd_stop'),
-            ('/change_waypoint', '/CAV_03/change_waypoint'),
-        ]
+      
     )
 
     # 5. Stanley 노드 cav4 (ID 4)
@@ -82,10 +73,7 @@ def generate_launch_description():
         parameters=[{'original_way_path': 'tool/cav4p3.csv'},
                         {'inside_way_path': 'tool/cav4p3_inside.csv'}],
         additional_env={'ROS_DOMAIN_ID': '4'},
-        remappings=[
-            ('/cmd_stop', '/CAV_04/cmd_stop'),
-            ('/change_waypoint', '/CAV_04/change_waypoint'),
-        ]
+       
     )
     return LaunchDescription([
         domain_bridge,
