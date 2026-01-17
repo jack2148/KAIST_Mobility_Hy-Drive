@@ -1,5 +1,4 @@
 #include <rclcpp/rclcpp.hpp>
-#include <rclcpp/qos.hpp> 
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/accel.hpp>
 #include <std_msgs/msg/bool.hpp> 
@@ -33,18 +32,21 @@ public:
     StanleyTrackerNode()
     : Node("stanley_tracker_node")
     {
-        auto qos_profile = rclcpp::SensorDataQoS(); 
+        // QoS 설정: SensorData (Best Effort, Volatile)
+        auto qos_profile = rclcpp::QoS(rclcpp::KeepLast(10));
+        qos_profile.best_effort();
+        qos_profile.durability_volatile();
 
         // 파라미터 설정
         this->declare_parameter("original_way_path", "tool/cav1p3.csv");
         this->declare_parameter("inside_way_path", "tool/cav1p3_inside.csv");
-        this->declare_parameter("k_gain", 1.7);
-        this->declare_parameter("max_steer", 0.7);
-        this->declare_parameter("target_speed", 2.0);
-        this->declare_parameter("center_to_front", 0.17); 
-        this->declare_parameter("wheelbase", 0.33);       
+        this->declare_parameter("k_gain", 2.0);
+        this->declare_parameter("max_steer", 0.7);       // 최대 조향각 (rad)
+        this->declare_parameter("target_speed", 2.0);    // 기본 속도 (m/s)
+        this->declare_parameter("center_to_front", 0.17);// 중심~전륜 거리 (m)
+        this->declare_parameter("wheelbase", 0.33);      // 축거 (m)
         this->declare_parameter("steer_gain", 1.0);
-        this->declare_parameter("forward_step", 15);
+        this->declare_parameter("forward_step", 15);     // Lookahead Step
 
         // 파라미터 로드
         original_csv_path_ = this->get_parameter("original_way_path").as_string();
@@ -58,25 +60,23 @@ public:
         steer_gain_ = this->get_parameter("steer_gain").as_double();
         forward_step_ = this->get_parameter("forward_step").as_int(); 
 
+        // 경로 파일 로딩
         load_waypoints(original_csv_path_, waypoints_original_);
         load_waypoints(inside_csv_path_, waypoints_inside_);
+        
+        // 초기 경로는 Original로 설정
         current_waypoints_ = &waypoints_original_;
         is_inside_path_active_ = false;
 
         // 1. Pose 구독
-        // 시뮬레이터가 /Ego_pose를 주는지 /CAV_xx/Ego_pose를 주는지에 따라 다르지만
-        // 보통 상대경로 "Ego_pose"를 쓰면 네임스페이스가 붙습니다.
-        // 만약 시뮬레이터가 전역 이름("/Ego_pose")을 쓴다면 슬래시를 붙여야 합니다.
-        // 기존에 잘 되던 코드 그대로 "/Ego_pose" 유지합니다.
         sub_pose_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "/Ego_pose", qos_profile, std::bind(&StanleyTrackerNode::pose_callback, this, _1));
-    
-        // 2. Accel 발행 (상대 경로 X -> 기존 코드 유지)
+        
+        // 2. Accel 발행
         pub_accel_ = this->create_publisher<geometry_msgs::msg::Accel>(
             "/Accel", qos_profile);
 
-        // 3. [관제탑] 정지 명령 (상대 경로)
-        // 네임스페이스가 CAV_01이면 -> /CAV_01/cmd_stop 구독
+        // 3. [관제탑] 정지 명령
         sub_stop_cmd_ = this->create_subscription<std_msgs::msg::Bool>(
             "cmd_stop", qos_profile, 
             [this](const std_msgs::msg::Bool::SharedPtr msg) {
@@ -89,23 +89,19 @@ public:
                 }
             });
 
-        // 4. [관제탑] 경로 변경 (상대 경로)
-        // 네임스페이스가 CAV_01이면 -> /CAV_01/change_waypoint 구독
+        // 4. [관제탑] 경로 변경 요청 (Inside <-> Original)
         sub_change_way_ = this->create_subscription<std_msgs::msg::Bool>(
             "change_waypoint", qos_profile,
             std::bind(&StanleyTrackerNode::callback_change_waypoint, this, _1));
 
-        // 5. [관제탑] HV 속도 (상대 경로 - 수정됨)
-        // 네임스페이스가 CAV_01이면 -> /CAV_01/hv_vel 구독
-        // MainTrafficController가 이제 /CAV_01/hv_vel을 쏴주므로 매칭 성공!
+        // 5. [관제탑] HV 속도 (회전교차로용)
         sub_hv_vel_ = this->create_subscription<std_msgs::msg::Float32>(
             "hv_vel", qos_profile,
             [this](const std_msgs::msg::Float32::SharedPtr msg) {
                 this->hv_vel_ = msg->data;
             });
 
-        // 6. [관제탑] 회전교차로 상태 (상대 경로)
-        // 네임스페이스가 CAV_01이면 -> /CAV_01/is_roundabout 구독
+        // 6. [관제탑] 회전교차로 상태
         sub_is_roundabout_ = this->create_subscription<std_msgs::msg::Bool>(
             "is_roundabout", qos_profile,
             [this](const std_msgs::msg::Bool::SharedPtr msg) {
@@ -122,7 +118,7 @@ private:
         }
 
         std::string line;
-        std::getline(file, line);
+        std::getline(file, line); // Header skip
         target_vector.clear();
 
         while (std::getline(file, line)) {
@@ -146,15 +142,17 @@ private:
         RCLCPP_INFO(this->get_logger(), "Loaded %zu waypoints from %s", target_vector.size(), path.c_str());
     }
 
+    // 경로 변경 콜백
     void callback_change_waypoint(const std_msgs::msg::Bool::SharedPtr msg) {
         bool request_inside = msg->data;
 
+        // Inside 경로 요청이 왔고, 현재 Inside가 아니며, 데이터가 있을 때만 전환
         if (request_inside) {
             if (!is_inside_path_active_ && !waypoints_inside_.empty()) {
                 RCLCPP_INFO(this->get_logger(), "%s[SWITCH] Switching to INSIDE PATH%s", ANSI_CYAN.c_str(), ANSI_RESET.c_str());
                 is_inside_path_active_ = true;
                 current_waypoints_ = &waypoints_inside_;
-                last_nearest_idx_ = -1; 
+                // 전체 검색 방식을 사용하므로 인덱스 초기화 불필요
             }
         } 
     }
@@ -166,6 +164,7 @@ private:
     }
 
     void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
+        // 0. 비상 정지 체크
         if (stop_signal_) {
             auto stop_msg = geometry_msgs::msg::Accel();
             stop_msg.linear.x = 0.0;  
@@ -180,25 +179,20 @@ private:
             return;
         }
 
+        // 1. 차량 상태 추출
         double center_x = msg->pose.position.x;
         double center_y = msg->pose.position.y;
         double current_yaw = msg->pose.orientation.z;
 
+        // 2. 전륜(Front Axle) 위치 계산 (Stanley 핵심)
         double front_x = center_x + center_to_front_ * std::cos(current_yaw);
         double front_y = center_y + center_to_front_ * std::sin(current_yaw);
 
-        // Nearest Waypoint
+        // 3. Nearest Waypoint Search (전체 검색 - 값이 튀는 현상 방지)
         int nearest_idx = -1;
         double min_dist = std::numeric_limits<double>::max();
-        int search_start = 0;
-        int search_end = current_waypoints_->size();
 
-        if (last_nearest_idx_ != -1) {
-            search_start = 0;
-            search_end = current_waypoints_->size();
-        }
-            
-        for (int i = search_start; i < search_end; ++i) {
+        for (size_t i = 0; i < current_waypoints_->size(); ++i) {
             double dx = front_x - (*current_waypoints_)[i].x;
             double dy = front_y - (*current_waypoints_)[i].y;
             double dist = std::hypot(dx, dy);
@@ -208,39 +202,23 @@ private:
             }
         }
 
-        // Return to Original Path Logic
+        // 4. 경로 복귀 로직 (Inside -> Original)
+        // Inside 경로의 끝부분(마지막 5개)에 도달하면 Original로 자동 복귀
         if (is_inside_path_active_) {
             if (nearest_idx >= (int)current_waypoints_->size() - 5) { 
                 RCLCPP_INFO(this->get_logger(), "%s[RETURN] End of Inside Path. Returning to ORIGINAL.%s", ANSI_YELLOW.c_str(), ANSI_RESET.c_str());
                 is_inside_path_active_ = false;
                 current_waypoints_ = &waypoints_original_;
-                last_nearest_idx_ = -1; 
-                return; 
+                return; // 이번 턴 종료하고 다음 턴에 Original 경로로 다시 계산
             }
         }
-        else {
-             if (last_nearest_idx_ != -1) {
-                size_t total = current_waypoints_->size();
-                bool wrap_around = (last_nearest_idx_ > total * 0.9) && (nearest_idx < total * 0.1); 
-                
-                if (wrap_around) {
-                    lap_count_++;
-                    if (lap_count_ == 5) {
-                        RCLCPP_INFO(this->get_logger(), "%s[SUCCESS] 5 LAPS COMPLETED!%s", ANSI_GREEN.c_str(), ANSI_RESET.c_str());
-                    } else {
-                        RCLCPP_INFO(this->get_logger(), "Lap %d Completed.", lap_count_);
-                    }
-                }
-            }
-        }
-        
-        last_nearest_idx_ = nearest_idx;
 
-        // CTE Calculation
+        // 5. CTE 계산
         int next_nearest_idx = (nearest_idx + 1) % current_waypoints_->size();
         
-        if (is_inside_path_active_ && next_nearest_idx == 0 && nearest_idx == (int)current_waypoints_->size() - 1) {
-            next_nearest_idx = nearest_idx; 
+        // Inside 경로 끝부분 랩어라운드 방지
+        if (is_inside_path_active_ && next_nearest_idx == 0) {
+            next_nearest_idx = nearest_idx;
         }
 
         double map_x = (*current_waypoints_)[nearest_idx].x;
@@ -258,9 +236,10 @@ private:
         double cross_product = dx * path_dy - dy * path_dx; 
         double cte = cross_product / path_len;
 
-        // Heading Error Calculation
+        // 6. Heading Error 계산
         int target_idx = (nearest_idx + forward_step_) % current_waypoints_->size();
         
+        // Inside 경로 오버플로우 처리
         if (is_inside_path_active_ && (nearest_idx + forward_step_) >= (int)current_waypoints_->size()) {
             target_idx = current_waypoints_->size() - 1;
         }
@@ -273,6 +252,7 @@ private:
         double target_dx = (*current_waypoints_)[next_target_idx].x - (*current_waypoints_)[target_idx].x;
         double target_dy = (*current_waypoints_)[next_target_idx].y - (*current_waypoints_)[target_idx].y;
         
+        // 점이 겹쳐있을 경우 대비
         if (std::hypot(target_dx, target_dy) < 1e-6 && target_idx > 0) {
              target_dx = (*current_waypoints_)[target_idx].x - (*current_waypoints_)[target_idx-1].x;
              target_dy = (*current_waypoints_)[target_idx].y - (*current_waypoints_)[target_idx-1].y;
@@ -281,15 +261,13 @@ private:
         double path_yaw = std::atan2(target_dy, target_dx);
         double heading_error = normalize_angle(path_yaw - current_yaw);
 
-        // [속도 제어]
+        // 7. 속도 결정
         double final_speed = target_speed_;
-        
-        // 회전교차로에서는 HV 속도 추종
         if (is_roundabout_) {
             final_speed = std::max((double)hv_vel_, 0.0);
         }
 
-        // Stanley Control Law
+        // 8. Stanley Control Law 적용
         double v_clamped = std::max(final_speed, 0.1); 
         double cte_correction = std::atan2(k_gain_ * cte, v_clamped);
 
@@ -298,8 +276,9 @@ private:
         steer_angle *= steer_gain_;
         steer_angle = std::max(-max_steer_, std::min(max_steer_, steer_angle));
 
-        // Publish Message
+        // 9. 최종 메시지 발행 (Accel: linear.x=Speed, angular.z=YawRate)
         auto msg_out = geometry_msgs::msg::Accel();
+        // [중요] 조향각 -> YawRate 변환
         double yaw_rate = (final_speed / wheelbase_) * std::tan(steer_angle);
 
         msg_out.linear.x = final_speed;
@@ -313,7 +292,7 @@ private:
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_stop_cmd_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_change_way_;
     
-    // [관제탑 추가 구독]
+    // 관제탑 추가 구독
     rclcpp::Subscription<std_msgs::msg::Float32>::SharedPtr sub_hv_vel_;
     rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr sub_is_roundabout_;
 
@@ -321,7 +300,7 @@ private:
     
     std::vector<Point> waypoints_original_;
     std::vector<Point> waypoints_inside_;
-    std::vector<Point>* current_waypoints_;
+    std::vector<Point>* current_waypoints_; // 현재 활성화된 경로를 가리키는 포인터
 
     std::string original_csv_path_;
     std::string inside_csv_path_;
@@ -334,8 +313,6 @@ private:
     double steer_gain_;
     int forward_step_;
 
-    int lap_count_ = 0;
-    int last_nearest_idx_ = -1;
     bool is_inside_path_active_ = false; 
 
     float hv_vel_ = 0.0f;

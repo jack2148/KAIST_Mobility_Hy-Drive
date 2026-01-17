@@ -12,7 +12,6 @@
 #include <map>
 #include <deque> 
 
-
 // 로그 색상 정의
 const std::string ANSI_RESET   = "\033[0m";
 const std::string ANSI_BLUE    = "\033[34m";
@@ -20,7 +19,6 @@ const std::string ANSI_RED     = "\033[31m";
 const std::string ANSI_CYAN    = "\033[36m";
 const std::string ANSI_YELLOW  = "\033[33m";
 const std::string ANSI_GREEN   = "\033[32m";
-
 
 // 2D 벡터 연산 및 OBB(Oriented Bounding Box) 충돌 감지를 위한 네임스페이스
 namespace Geo {
@@ -44,7 +42,6 @@ namespace Geo {
         std::vector<Vec2> axes = get_axes(box1);
         auto axes2 = get_axes(box2);
         axes.insert(axes.end(), axes2.begin(), axes2.end());
-
 
         for (const auto& axis : axes) {
             double min1 = 1e9, max1 = -1e9;
@@ -75,7 +72,6 @@ struct Vehicle {
     std::string stop_cause = ""; // 내 차량을 멈추게 한 다른 차량은 누구인가
     bool has_entered_roundabout = false; // 회전교차로 내부에 들어갔는가
 
-
     // hv 속도 계산용 변수
     Geo::Vec2 last_pos{0.0, 0.0};
     rclcpp::Time last_time;
@@ -97,8 +93,8 @@ public:
     MainTrafficController() : Node("main_traffic_controller") {
         // 차량 정보
         car_info = {0.17, 0.16, 0.075, 0.075};
-        front_padding_ = 1.2;
-        side_padding_ = 0.4;
+        front_padding_ = 0.8;
+        side_padding_ = 0.8;
 
         // 충돌 감지 범위 : 이 범위 안에 my_cav외의 다른 차량이 있을 경우 충돌 감지 로직 실행
         approach_range_sq_ = 2.5 * 2.5;
@@ -106,7 +102,7 @@ public:
         // 사지교차로 관련 변수
         fourway_center_ = {-2.333, 0.0};
         fourway_len_ = 2.0;
-        fourway_app_r_sq_ = 1.7 * 1.7;
+        fourway_app_r_sq_ = 1.5 * 1.5;
         fourway_box_half_len_ = fourway_len_ / 2.0;
 
         // 회전교차로 관련 변수
@@ -115,10 +111,9 @@ public:
         round_radius_ = 1.4;
 
         // 삼지교차로 관련 변수
-        threeway_box_x_min_ = -3.5; threeway_box_x_max_ = -1.3;
-        threeway_1_y_min_ = 1.5;    threeway_1_y_max_ = 2.7;
-        threeway_2_y_min_ = -2.8;   threeway_2_y_max_ = -1.9;
-
+        threeway_box_x_min_ = -3.5; threeway_box_x_max_ = -1.4;
+        threeway_1_y_min_ = 1.5;    threeway_1_y_max_ = 2.5;
+        threeway_2_y_min_ = -2.5;   threeway_2_y_max_ = -1.5;
 
         // 타이머
         tmr_discovery_ = create_wall_timer(
@@ -130,16 +125,13 @@ public:
             std::bind(&MainTrafficController::control_loop, this)
         );
 
-
         RCLCPP_INFO(get_logger(), "Controller Started: Publishing individual /hv_vel topics.");
     }
-
 
 private:
     rclcpp::TimerBase::SharedPtr tmr_discovery_, tmr_control_;
     std::unordered_map<std::string, Vehicle> vehicles_;
     std::map<std::string, std::string> conflict_info_;
-
 
     // HV 속도 이동 평균 필터용 변수
     std::deque<double> hv_vel_buffer_;
@@ -158,8 +150,7 @@ private:
     void update_conflict_status(const std::string& stopped_cav, const std::string& cause_vehicle) {
         if (conflict_info_.count(stopped_cav) && conflict_info_[stopped_cav] == cause_vehicle) return; // 이미 같은 상황이 저장되어있으면 무시
         conflict_info_[stopped_cav] = cause_vehicle;
-        RCLCPP_INFO(get_logger(), "%s[CONFLICT START] %s stopped by %s%s",
-                    ANSI_YELLOW.c_str(), stopped_cav.c_str(), cause_vehicle.c_str(), ANSI_RESET.c_str());
+    
     }
 
     // 차량 정지상황 해소 시 conflict_info에서 제거
@@ -221,7 +212,6 @@ private:
         Vehicle v; v.id = id; v.is_cav = is_cav;
         v.last_time = this->now();
 
-
         v.sub = create_subscription<geometry_msgs::msg::PoseStamped>(
             topic, rclcpp::SensorDataQoS(),
             [this, id](const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
@@ -232,14 +222,12 @@ private:
                     double prev_y = veh.last_pos.y;
                     rclcpp::Time prev_time = veh.last_time;
 
-
                     veh.pos = {msg->pose.position.x, msg->pose.position.y};
                     veh.z = msg->pose.orientation.z;
                     veh.active = true;
                     
                     veh.last_pos = veh.pos;
                     veh.last_time = msg->header.stamp;
-
 
                     // [HV_19 속도 계산 및 도메인별 pub 로직]
                     if (id == "HV_19") {
@@ -259,7 +247,6 @@ private:
                             double sum = 0.0;
                             for (double v : hv_vel_buffer_) sum += v;
                             double avg_vel = sum / hv_vel_buffer_.size();
-
 
                             // /hv_vel 메시지 생성
                             std_msgs::msg::Float32 vel_msg;
@@ -287,21 +274,227 @@ private:
         RCLCPP_INFO(get_logger(), "Registered Vehicle: %s", id.c_str());
     }
 
-
-    // 차량이 threeway(삼지교차로) 구역 내에 위치하는지 판별하는 함수
+    // 삼지교차로 (threeway) 로직
     bool is_in_threeway_zone(const Geo::Vec2& pos) {
         return (pos.x >= threeway_box_x_min_ && pos.x <= threeway_box_x_max_) &&
                ((pos.y >= threeway_1_y_min_ && pos.y <= threeway_1_y_max_) ||
                 (pos.y >= threeway_2_y_min_ && pos.y <= threeway_2_y_max_));
     }
 
-    // 차량이 회전교차로 접근 구역 내에 위치하는지 판별하는 함수
-    bool is_in_round_zone(const Vehicle& v){ return (v.pos - round_center_).dist_Sq() <= round_app_r_sq_; }
+    bool check_threeway_conflict(const Vehicle& my_cav, const std::string& tid, bool is_next_lane, bool is_full, std::string& temp_log) {
+        if (tid == "CAV_03" || tid == "CAV_04") {
+            // cav3 or cav4와 cav1이 충돌하는 경우 : 나란히 주행하다가 cav1이 안쪽으로 꺾으며 충돌 가능 -> cav1이 정지 후 cav3 or cav4 먼저 보냄
+            if (my_cav.id == "CAV_01" && is_next_lane) {
+                temp_log = "threeway_NEXT_LANE";
+                return true;
+            // cav3 or cav4와 cav2가 충돌하는 경우 : 사지교차로에서 빠져나가는 cav2와 수직으로 충돌 가능 -> cav2가 정지 후 cav3 or cav4 먼저 보냄
+            } else if (my_cav.id == "CAV_02" && is_full && !is_next_lane) {
+                temp_log = "threeway_VERTICAL";
+                return true;
+            }
+        }
+        return false;
+    }
 
-    // 차량이 사지교차로 접근 구역 내에 위치하는지 판별하는 함수
+    // ============================================================
+    // 사지교차로 (fourway) 로직
+    // ============================================================
     bool is_in_fourway_zone(const Vehicle& v){ return (v.pos - fourway_center_).dist_Sq() <= fourway_app_r_sq_; }
 
-    // 차량이 정의된 3가지 주요 위험 구역(threeway, 회전교차로, 4거리) 중 하나에 있는지 확인하는 함수
+    bool check_fourway_conflict(bool is_front, bool is_next_lane, std::string& temp_log) {
+        // 옆차선이 아니며 정면 충돌 위험이 있는 경우 my_cav가 정지
+        if (is_front && !is_next_lane) {
+            temp_log = "4WAY_FRONT";
+            return true;
+        }
+        return false;
+    }
+
+    // 사지교차로 진입 전, 내부 상황 파악 및 정지 판단하는 로직. true : 정지해야함 / false : 계속 주행
+    bool check_fourway_rect_split(const Vehicle& my_cav) {
+        // 사지교차로 범위 (정사각형)
+        double x_min = fourway_center_.x - fourway_box_half_len_;
+        double x_max = fourway_center_.x + fourway_box_half_len_;
+        double y_min = fourway_center_.y - fourway_box_half_len_;
+        double y_max = fourway_center_.y + fourway_box_half_len_;
+
+        // my_cav가 사지교차로 내부에 있는가?
+        bool i_am_inside = (my_cav.pos.x >= x_min && my_cav.pos.x <= x_max &&
+                            my_cav.pos.y >= y_min && my_cav.pos.y <= y_max);
+        // my_cav가 사지교차로를 향해 주행중이며 접근 구역에 있는 경우에만 계산 (이미 내부에 있는 경우는 계산 X)
+        if (i_am_inside) return false;
+        if ((my_cav.pos - fourway_center_).dist_Sq() > fourway_app_r_sq_) return false;
+        if (!is_approaching(my_cav, fourway_center_)) return false;
+        
+        // 사지교차로(정사각형) 중심을 기준으로 my_cav의 위치가 어디인지 반환
+        bool am_i_top = (my_cav.pos.y > fourway_center_.y); // 위쪽 : true, 아래쪽 : false
+        bool am_i_right = (my_cav.pos.x > fourway_center_.x); // 오른쪽 : true, 왼쪽 : false
+
+    
+        if (my_cav.id == "CAV_01" || my_cav.id == "CAV_02") {
+            // 경우 1. CAV1 or CAV2가 my_cav인 경우 : 서로를 target으로 지정
+            std::string tid = (my_cav.id == "CAV_01") ? "CAV_02" : "CAV_01"; 
+            if (vehicles_.count(tid) && vehicles_.at(tid).active) {
+                const auto& target = vehicles_.at(tid);
+                bool target_inside = (target.pos.x >= x_min && target.pos.x <= x_max &&
+                                     target.pos.y >= y_min && target.pos.y <= y_max);
+                // target이 이미 사지교차로 내부에 있는 경우에만
+                if (target_inside) {
+                    bool target_is_top = (target.pos.y > fourway_center_.y);
+                    bool target_is_right = (target.pos.x > fourway_center_.x);
+                    bool target_approaching = is_approaching(target, fourway_center_);
+                    
+                    /*
+                    bool is_TB_distinct = (am_i_top != target_is_top);
+                    bool is_LR_distinct = (am_i_right != target_is_right);
+                    if (!(is_TB_distinct || is_LR_distinct)) {
+                        return true;
+                    }
+                    */
+
+                    // cav1이 정지해야하는 경우 : 상/하 교차점
+                    if (my_cav.id == "CAV_01"){
+                        if (am_i_top && !target_is_right && target_approaching) return true;
+                        else if (!am_i_top && target_is_right && target_approaching) return true;
+                    }
+                    // cav2가 정지해야하는 경우 : 좌/우 교차점
+                    else{
+                        if(!am_i_right && !target_is_top && target_approaching) return true;
+                        else if (am_i_right && target_is_right && target_approaching) return true;
+                    }
+                    
+                }
+            }
+
+            // 경우 2. CAV_03 or CAV_04가 직진하는 상황에서 CAV_01, CAV_02가 대기
+        }
+
+        // [New Logic 2] CAV_01 조건을 CAV_02까지 확장 (|| my_cav.id == "CAV_02" 추가)
+        if (my_cav.id == "CAV_01" || my_cav.id == "CAV_02") {
+            auto is_target_in_box = [&](const std::string& tid, bool check_top) {
+                if (vehicles_.count(tid) && vehicles_.at(tid).active) {
+                    const auto& tv = vehicles_.at(tid);
+                    bool in_rect = (tv.pos.x >= x_min && tv.pos.x <= x_max &&
+                                    tv.pos.y >= y_min && tv.pos.y <= y_max);
+                    if (in_rect) {
+                        bool tv_is_top = (tv.pos.y > fourway_center_.y);
+                        return (tv_is_top == check_top);
+                    }
+                }
+                return false;
+            };
+
+            if (am_i_top && is_target_in_box("CAV_03", true)) return true;
+            if (!am_i_top && is_target_in_box("CAV_04", false)) return true;
+        }
+
+        int count_top = 0, count_bottom = 0;
+        for (const auto& [id, v] : vehicles_) {
+            if (!v.active) continue;
+            if (v.pos.x >= x_min && v.pos.x <= x_max &&
+                v.pos.y >= y_min && v.pos.y <= y_max) {
+                if (v.pos.y > fourway_center_.y) count_top++;
+                else count_bottom++;
+            }
+        }
+        return am_i_top ? (count_top >= 2) : (count_bottom >= 2);
+    }
+
+
+    // 회전교차로 (roundabout) 로직
+    bool is_in_round_zone(const Vehicle& v){ return (v.pos - round_center_).dist_Sq() <= round_app_r_sq_; }
+
+    // 현재 회전교차로 내부에 진입해 있는 자율주행 차량(CAV)의 개수를 반환하는 함수
+    int count_cavs_in_roundabout() {
+        int count = 0;
+        double r_sq = round_radius_ * round_radius_;
+        for (const auto& [id, v] : vehicles_) {
+            if (v.is_cav && v.active &&
+                (v.pos - round_center_).dist_Sq() <= r_sq) count++;
+        }
+        return count;
+    }
+
+    // 회전교차로 진입 시 내부 차량 유무, 타 차량의 접근, 양보(Yield) 규칙 등을 종합하여 진입 가능 여부를 판단하는 함수
+    bool check_roundabout(const Vehicle& my_cav) {
+        double dist_sq = (my_cav.pos - round_center_).dist_Sq();
+        double r_sq = round_radius_ * round_radius_;
+        if (dist_sq > round_app_r_sq_ || dist_sq <= r_sq || !is_approaching(my_cav, round_center_))
+            return false;
+
+        int cavs_inside = count_cavs_in_roundabout();
+        if (cavs_inside >= 2) return true;
+
+        auto is_blocked_by_hv_check = [&](const Vehicle& v) -> bool {
+            double default_check_left = 2.1 / round_radius_;
+            double default_check_right = 0.4 / round_radius_;
+            if (v.is_stopped && v.stop_cause == "ROUND_YIELD") default_check_left += 0.5;
+            double v_angle = std::atan2(v.pos.y - round_center_.y, v.pos.x - round_center_.x);
+
+            for (const auto& [tid, target] : vehicles_) {
+                if (tid == v.id || !target.active || target.is_cav) continue;
+                if ((target.pos - round_center_).dist_Sq() <= r_sq){
+                    double t_angle = std::atan2(target.pos.y - round_center_.y, target.pos.x - round_center_.x);
+                    double diff = t_angle - v_angle;
+                    while (diff > M_PI) diff -= 2.0 * M_PI;
+                    while (diff < -M_PI) diff += 2.0 * M_PI;
+                    if ((diff > 0 && diff < default_check_right) ||
+                        (diff <= 0 && diff > -default_check_left)) return true;
+                }
+            }
+            return false;
+        };
+
+        if (is_blocked_by_hv_check(my_cav)) return true;
+
+        for (const auto& [tid, target] : vehicles_) {
+            if (tid == my_cav.id || !target.is_cav || !target.active) continue;
+            bool is_pair = ((my_cav.id == "CAV_01" && tid == "CAV_04") ||
+                            (my_cav.id == "CAV_04" && tid == "CAV_01") ||
+                            (my_cav.id == "CAV_02" && tid == "CAV_03") ||
+                            (my_cav.id == "CAV_03" && tid == "CAV_02"));
+            double t_dist_sq = (target.pos - round_center_).dist_Sq();
+            if (t_dist_sq > round_app_r_sq_ || t_dist_sq <= r_sq || !is_approaching(target, round_center_)) continue;
+            if (is_blocked_by_hv_check(target)) continue;
+            if (is_pair) continue;
+            if (t_dist_sq < dist_sq - 0.01) return true;
+            if (std::abs(t_dist_sq - dist_sq) <= 0.01 && tid < my_cav.id) return true;
+        }
+        return false;
+    }
+
+    void process_roundabout_path_decision(Vehicle& my_cav, const std::string& zone, const std::string& my_id) {
+        // 진입 직전 회전할 차선 결정 (original or inside)
+        double dist_sq = (my_cav.pos - round_center_).dist_Sq();
+        if (dist_sq <= round_app_r_sq_ * 1.1 &&
+            dist_sq > (round_radius_ * round_radius_) &&
+            !my_cav.has_entered_roundabout) {
+
+            bool go_inside = false;
+            if (my_cav.id == "CAV_01" &&
+                vehicles_.count("CAV_04") &&
+                vehicles_["CAV_04"].active &&
+                (vehicles_["CAV_04"].pos - round_center_).dist_Sq() <= 2.5*2.5) {
+                go_inside = true;
+            }
+            else if (my_cav.id == "CAV_02" &&
+                     vehicles_.count("CAV_03") &&
+                     vehicles_["CAV_03"].active &&
+                     (vehicles_["CAV_03"].pos - round_center_).dist_Sq() <= 2.5*2.5) {
+                go_inside = true;
+            }
+            
+            std_msgs::msg::Bool way_msg;
+            way_msg.data = go_inside;
+            my_cav.pub_change_way->publish(way_msg);
+            my_cav.has_entered_roundabout = true;
+        }
+    }
+
+    // ============================================================
+    // 공통 유틸 및 충돌 감지 (is_conflict)
+    // ============================================================
+    // 차량이 정의된 3가지 주요 위험 구역(threeway, 회전교차로, 4거리) 중 하나에 있는지 확인
     bool is_in_danger_zone(const Vehicle& v) {
         if ((v.pos - round_center_).dist_Sq() <= round_app_r_sq_) return true;
         if ((v.pos - fourway_center_).dist_Sq() <= fourway_app_r_sq_) return true;
@@ -344,7 +537,7 @@ private:
             double dx = target.pos.x - my_cav.pos.x;
             double dy = target.pos.y - my_cav.pos.y;
             double side_dist = std::abs(-std::sin(my_cav.z) * dx + std::cos(my_cav.z) * dy);
-            bool is_next_lane = is_parallel(my_cav, target) && (side_dist > vehicle_width * 1.2);
+            bool is_next_lane = is_parallel(my_cav, target) && (side_dist > vehicle_width * 1.2) && side_dist < vehicle_width*2.0;
 
             // 실제 충돌 위험 플래그
             bool collision_detected = false;
@@ -352,24 +545,11 @@ private:
 
             // 삼지교차로 충돌 감지 로직
             if (is_in_threeway_zone(my_cav.pos)) {
-                if (tid == "CAV_03" || tid == "CAV_04") {
-                    // cav3 or cav4와 cav1이 충돌하는 경우 : 나란히 주행하다가 cav1이 안쪽으로 꺾으며 충돌 가능 -> cav1이 정지 후 cav3 or cav4 먼저 보냄
-                    if (my_cav.id == "CAV_01" && is_next_lane) {
-                        collision_detected = true; temp_log = "threeway_NEXT_LANE";
-                    // cav3 or cav4와 cav2가 충돌하는 경우 : 사지교차로에서 빠져나가는 cav2와 수직으로 충돌 가능 -> cav2가 정지 후 cav3 or cav4 먼저 보냄
-                    } else if (my_cav.id == "CAV_02" && is_full && !is_next_lane) {
-                        collision_detected = true; temp_log = "threeway_VERTICAL";
-                    }
-                }
+                collision_detected = check_threeway_conflict(my_cav, tid, is_next_lane, is_full, temp_log);
             }  
-
             // 사지교차로 충돌 감지 로직
             else if (is_in_fourway_zone(my_cav)) {
-                // 옆차선이 아니며 정면 충돌 위험이 있는 경우 my_cav가 정지
-                if (is_front && !is_next_lane) {
-                    collision_detected = true;
-                    temp_log = "4WAY_FRONT";
-                }
+                collision_detected = check_fourway_conflict(is_front, is_next_lane, temp_log);
             }
 
             // 충돌 감지 시 conflict_info에 업데이트 및 데드락 방지
@@ -387,10 +567,24 @@ private:
         return false;
     }
 
+    // ============================================================
+    // 메인 제어 루프 (control_loop)
+    // ============================================================
+
+    void handle_safe_zone_recovery(Vehicle& my_cav, const std::string& my_id) {
+        if (my_cav.is_stopped) {
+            std_msgs::msg::Bool msg; msg.data = false; my_cav.pub_stop->publish(msg);
+            my_cav.is_stopped = false;
+            my_cav.stop_cause.clear();
+            clear_conflict_status(my_id);
+        } else {
+            std_msgs::msg::Bool msg; msg.data = false; my_cav.pub_stop->publish(msg);
+        }
+    }
+
     // 각 구간 별 진입, 우선순위, 충돌 등에 대해 구체적인 제어를 하는 함수
     void control_loop() {
         if (vehicles_.empty()) return;
-
 
         for (auto& [my_id, my_cav] : vehicles_) {
             if (!my_cav.is_cav || !my_cav.active) continue;
@@ -406,19 +600,9 @@ private:
 
             // 충돌 위험 요소가 사라졌다면 정지상태 -> 다시 주행 시작로 전환
             if (!is_in_danger_zone(my_cav)) {
-                if (my_cav.is_stopped) {
-                    RCLCPP_INFO(get_logger(), "%s[SAFE ZONE] %s -> [GO]%s",
-                                ANSI_BLUE.c_str(), my_id.c_str(), ANSI_RESET.c_str());
-                    std_msgs::msg::Bool msg; msg.data = false; my_cav.pub_stop->publish(msg);
-                    my_cav.is_stopped = false;
-                    my_cav.stop_cause.clear();
-                    clear_conflict_status(my_id);
-                } else {
-                    std_msgs::msg::Bool msg; msg.data = false; my_cav.pub_stop->publish(msg);
-                }
+                handle_safe_zone_recovery(my_cav, my_id);
                 continue;
             }
-
 
             bool my_cav_stop = false;
             std::string cause_id = "NONE";
@@ -427,12 +611,10 @@ private:
             std::string zone = is_in_threeway_zone(my_cav.pos) ? "threeway" :
                                (is_in_fourway_zone(my_cav) ? "4WAY" : "ROUND");
 
-
             // 다른 cav가 my_cav를 정지시켰다면 무조건 정지
             if (my_cav.forced_stop) {
                 my_cav_stop = true; cause_id = my_cav.stop_cause; log_msg = "FORCED";
             }
-
             else {
                 // is_conflict에서 정의한 충돌 방지 로직 실행 (my_cav-target 관계 기반임)
                 if (is_conflict(my_cav, cause_id, log_msg, deadlock_active)) {
@@ -440,7 +622,7 @@ private:
                 }
                 // 각 교차로 별 세부 충돌 방지 로직 (my_cav-교차로 관계 기반임)
                 else {
-                    // 사지교차로 
+                    // 사지교차로
                     if (zone == "4WAY") {
                         if (check_fourway_rect_split(my_cav)) {
                             my_cav_stop = true; cause_id = "4WAY_BLOCK"; log_msg = "4WAY_FULL";
@@ -452,36 +634,8 @@ private:
                             my_cav_stop = true; cause_id = "ROUND_YIELD"; log_msg = "ROUND_YIELD";
                             my_cav.has_entered_roundabout = false;
                         } 
-                        // 진입 직전 회전할 차선 결정 (original or inside)
                         else {
-                            double dist_sq = (my_cav.pos - round_center_).dist_Sq();
-                            if (dist_sq <= round_app_r_sq_ * 1.1 &&
-                                dist_sq > (round_radius_ * round_radius_) &&
-                                !my_cav.has_entered_roundabout) {
-
-
-                                bool go_inside = false;
-                                if (my_cav.id == "CAV_01" &&
-                                    vehicles_.count("CAV_04") &&
-                                    vehicles_["CAV_04"].active &&
-                                    (vehicles_["CAV_04"].pos - round_center_).dist_Sq() <= 2.5*2.5) {
-                                    go_inside = true;
-                                }
-                                else if (my_cav.id == "CAV_02" &&
-                                         vehicles_.count("CAV_03") &&
-                                         vehicles_["CAV_03"].active &&
-                                         (vehicles_["CAV_03"].pos - round_center_).dist_Sq() <= 2.5*2.5) {
-                                    go_inside = true;
-                                }
-                                
-                                std_msgs::msg::Bool way_msg;
-                                way_msg.data = go_inside;
-                                my_cav.pub_change_way->publish(way_msg);
-                                RCLCPP_INFO(get_logger(), "[%s] [%s] -> PATH: %s",
-                                            zone.c_str(), my_id.c_str(),
-                                            go_inside ? "INSIDE" : "ORIGINAL");
-                                my_cav.has_entered_roundabout = true;
-                            }
+                            process_roundabout_path_decision(my_cav, zone, my_id);
                         }
                     } else {
                         my_cav.has_entered_roundabout = false;
@@ -489,11 +643,9 @@ private:
                 }
             }
 
-
             if (!my_cav_stop) {
                 clear_conflict_status(my_id);
             }
-
 
             if (my_cav.is_stopped != my_cav_stop) {
                 if (my_cav_stop) {
@@ -513,7 +665,6 @@ private:
                 update_conflict_status(my_id, cause_id);
             }
 
-
             my_cav.is_stopped = my_cav_stop;
             if (my_cav_stop && my_cav.stop_cause.empty()) {
                 my_cav.stop_cause = cause_id;
@@ -521,125 +672,10 @@ private:
                 my_cav.stop_cause.clear();
             }
 
-
             if (my_cav.pub_stop) {
                 std_msgs::msg::Bool msg; msg.data = my_cav_stop; my_cav.pub_stop->publish(msg);
             }
         }
-    }
-
-    // 사지교차로 진입 전, 내부 상황 파악 및 정지 판단하는 로직
-    bool check_fourway_rect_split(const Vehicle& my_v) {
-        double x_min = fourway_center_.x - fourway_box_half_len_;
-        double x_max = fourway_center_.x + fourway_box_half_len_;
-        double y_min = fourway_center_.y - fourway_box_half_len_;
-        double y_max = fourway_center_.y + fourway_box_half_len_;
-
-
-        bool i_am_inside = (my_v.pos.x >= x_min && my_v.pos.x <= x_max &&
-                            my_v.pos.y >= y_min && my_v.pos.y <= y_max);
-        if (i_am_inside) return false;
-        if ((my_v.pos - fourway_center_).dist_Sq() > fourway_app_r_sq_) return false;
-        if (!is_approaching(my_v, fourway_center_)) return false;
-
-
-        bool am_i_top = (my_v.pos.y > fourway_center_.y);
-
-
-        if (my_v.id == "CAV_01") {
-            auto is_target_in_box = [&](const std::string& tid, bool check_top) {
-                if (vehicles_.count(tid) && vehicles_.at(tid).active) {
-                    const auto& tv = vehicles_.at(tid);
-                    bool in_rect = (tv.pos.x >= x_min && tv.pos.x <= x_max &&
-                                    tv.pos.y >= y_min && tv.pos.y <= y_max);
-                    if (in_rect) {
-                        bool tv_is_top = (tv.pos.y > fourway_center_.y);
-                        return (tv_is_top == check_top);
-                    }
-                }
-                return false;
-            };
-
-
-            if (am_i_top && is_target_in_box("CAV_03", true)) return true;
-            if (!am_i_top && is_target_in_box("CAV_04", false)) return true;
-        }
-
-
-        int count_top = 0, count_bottom = 0;
-        for (const auto& [id, v] : vehicles_) {
-            if (!v.active) continue;
-            if (v.pos.x >= x_min && v.pos.x <= x_max &&
-                v.pos.y >= y_min && v.pos.y <= y_max) {
-                if (v.pos.y > fourway_center_.y) count_top++;
-                else count_bottom++;
-            }
-        }
-        return am_i_top ? (count_top >= 2) : (count_bottom >= 2);
-    }
-
-    // 현재 회전교차로 내부에 진입해 있는 자율주행 차량(CAV)의 개수를 반환하는 함수
-    int count_cavs_in_roundabout() {
-        int count = 0;
-        double r_sq = round_radius_ * round_radius_;
-        for (const auto& [id, v] : vehicles_) {
-            if (v.is_cav && v.active &&
-                (v.pos - round_center_).dist_Sq() <= r_sq) count++;
-        }
-        return count;
-    }
-
-    // 회전교차로 진입 시 내부 차량 유무, 타 차량의 접근, 양보(Yield) 규칙 등을 종합하여 진입 가능 여부를 판단하는 함수
-    bool check_roundabout(const Vehicle& my_cav) {
-        double dist_sq = (my_cav.pos - round_center_).dist_Sq();
-        double r_sq = round_radius_ * round_radius_;
-        if (dist_sq > round_app_r_sq_ || dist_sq <= r_sq || !is_approaching(my_cav, round_center_))
-            return false;
-
-
-        int cavs_inside = count_cavs_in_roundabout();
-        if (cavs_inside >= 2) return true;
-
-
-        auto is_blocked_by_hv_check = [&](const Vehicle& v) -> bool {
-            double default_check_left = 2.1 / round_radius_;
-            double default_check_right = 0.4 / round_radius_;
-            if (v.is_stopped && v.stop_cause == "ROUND_YIELD") default_check_left += 0.5;
-            double v_angle = std::atan2(v.pos.y - round_center_.y, v.pos.x - round_center_.x);
-
-
-            for (const auto& [tid, target] : vehicles_) {
-                if (tid == v.id || !target.active || target.is_cav) continue;
-                if ((target.pos - round_center_).dist_Sq() <= r_sq){
-                    double t_angle = std::atan2(target.pos.y - round_center_.y, target.pos.x - round_center_.x);
-                    double diff = t_angle - v_angle;
-                    while (diff > M_PI) diff -= 2.0 * M_PI;
-                    while (diff < -M_PI) diff += 2.0 * M_PI;
-                    if ((diff > 0 && diff < default_check_right) ||
-                        (diff <= 0 && diff > -default_check_left)) return true;
-                }
-            }
-            return false;
-        };
-
-
-        if (is_blocked_by_hv_check(my_cav)) return true;
-
-
-        for (const auto& [tid, target] : vehicles_) {
-            if (tid == my_cav.id || !target.is_cav || !target.active) continue;
-            bool is_pair = ((my_cav.id == "CAV_01" && tid == "CAV_04") ||
-                            (my_cav.id == "CAV_04" && tid == "CAV_01") ||
-                            (my_cav.id == "CAV_02" && tid == "CAV_03") ||
-                            (my_cav.id == "CAV_03" && tid == "CAV_02"));
-            double t_dist_sq = (target.pos - round_center_).dist_Sq();
-            if (t_dist_sq > round_app_r_sq_ || t_dist_sq <= r_sq || !is_approaching(target, round_center_)) continue;
-            if (is_blocked_by_hv_check(target)) continue;
-            if (is_pair) continue;
-            if (t_dist_sq < dist_sq - 0.01) return true;
-            if (std::abs(t_dist_sq - dist_sq) <= 0.01 && tid < my_cav.id) return true;
-        }
-        return false;
     }
 };
 
