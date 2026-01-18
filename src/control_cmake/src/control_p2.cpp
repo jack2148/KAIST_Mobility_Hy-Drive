@@ -38,25 +38,25 @@ public:
         pub_accel_ = this->create_publisher<geometry_msgs::msg::Accel>("/Accel", qos_profile);
 
         sub_stop_cmd_ = this->create_subscription<std_msgs::msg::Bool>(
-            "/cmd_stop", qos_profile, 
+            "/CAV_01/cmd_stop", qos_profile, 
             [this](const std_msgs::msg::Bool::SharedPtr msg) { this->stop_signal_ = msg->data; });
 
         sub_lane_cmd_ = this->create_subscription<std_msgs::msg::Int32>(
-            "/cmd_lane", qos_profile,
+            "/CAV_01/cmd_lane", qos_profile,
             [this](const std_msgs::msg::Int32::SharedPtr msg) {
                 current_waypoints_ = (msg->data == 1) ? &waypoints_lane1_ : &waypoints_lane2_;
             });
 
         sub_speed_cmd_ = this->create_subscription<std_msgs::msg::Float64>(
-            "/cmd_speed", qos_profile,
+            "/CAV_01/cmd_speed", qos_profile,
             [this](const std_msgs::msg::Float64::SharedPtr msg) {
                 this->target_speed_ = msg->data;
             });
 
         // 2. 파라미터 선언 (기본값 설정)
         // 여기서 기본값을 지정했으므로, 런치 파일에 값이 없으면 자동으로 이 값이 들어갑니다.
-        this->declare_parameter("csv_path_1", "tool/fastp2.csv"); 
-        this->declare_parameter("csv_path_2", "tool/slowp2.csv"); 
+        this->declare_parameter("csv_path_1", "tool/JSp2Lane1.csv"); 
+        this->declare_parameter("csv_path_2", "tool/JSp2Lane2.csv"); 
         this->declare_parameter("k_gain", 2.3);
         this->declare_parameter("max_steer", 0.9);
         this->declare_parameter("center_to_front", 0.17);

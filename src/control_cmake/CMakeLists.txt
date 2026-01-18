@@ -22,10 +22,8 @@ find_package(geometry_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
 
+# --- 정상 작동하는 노드들 ---
 add_executable(stanley_node src/control_stanley.cpp)
 ament_target_dependencies(stanley_node
   rclcpp
@@ -50,26 +48,29 @@ ament_target_dependencies(main_controller
   std_msgs      
 )
 
-add_executable(stanley_node2 src/control_stanley2.cpp)
-ament_target_dependencies(stanley_node2
-  rclcpp
-  geometry_msgs
-  std_msgs
-  tf2
-  tf2_geometry_msgs
-  nav_msgs
-)
+# --- 여기서부터 소스 파일이 없어 에러가 나는 부분입니다. 전부 주석 처리했습니다. ---
 
-add_executable(main_controller2 src/main2.cpp)
-ament_target_dependencies(main_controller2
-  rclcpp
-  geometry_msgs
-  std_msgs       
-  nav_msgs
-)
+# add_executable(stanley_node2 src/control_stanley2.cpp)
+# ament_target_dependencies(stanley_node2
+#   rclcpp
+#   geometry_msgs
+#   std_msgs
+#   tf2
+#   tf2_geometry_msgs
+#   nav_msgs
+# )
+
+# add_executable(main_controller2 src/main2.cpp)
+# ament_target_dependencies(main_controller2
+#   rclcpp
+#   geometry_msgs
+#   std_msgs        
+#   nav_msgs
+# )
+
+# --- 다시 정상 작동하는 노드 ---
 
 add_executable(main_p2_controller src/main_p2.cpp)
-
 ament_target_dependencies(main_p2_controller
   rclcpp
   geometry_msgs
@@ -85,25 +86,17 @@ install(DIRECTORY launch
   DESTINATION share/${PROJECT_NAME}
 )
 
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
-  # the following line skips the linter which checks for copyrights
-  # uncomment the line when a copyright and license is not present in all source files
-  #set(ament_cmake_copyright_FOUND TRUE)
-  # the following line skips cpplint (only works in a git repo)
-  # uncomment the line when this package is not in a git repo
-  #set(ament_cmake_cpplint_FOUND TRUE)
   ament_lint_auto_find_test_dependencies()
 endif()
 
 install(TARGETS
   stanley_node
   main_controller
-  stanley_node2
-  main_controller2
+#  stanley_node2
+#  main_controller2
   DESTINATION lib/${PROJECT_NAME}
 )
-
 
 ament_package()
