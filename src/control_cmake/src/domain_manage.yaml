@@ -47,6 +47,15 @@ topics:
     type: std_msgs/msg/Bool
     to_domain: 2
 
+  /CAV_02/hv_vel:
+    type: std_msgs/msg/Float32
+    to_domain: 2
+
+  /CAV_02/is_roundabout:
+    type: std_msgs/msg/Bool
+    to_domain: 2
+
+
   # 3. CAV 03 
   /CAV_03/cmd_stop:
     type: std_msgs/msg/Bool
@@ -55,6 +64,15 @@ topics:
   /CAV_03/change_waypoint:
     type: std_msgs/msg/Bool
     to_domain: 3
+
+  /CAV_03/hv_vel:
+    type: std_msgs/msg/Float32
+    to_domain: 3
+
+  /CAV_03/is_roundabout:
+    type: std_msgs/msg/Bool
+    to_domain: 3
+
 
   # 4. CAV 04 
   /CAV_04/cmd_stop:

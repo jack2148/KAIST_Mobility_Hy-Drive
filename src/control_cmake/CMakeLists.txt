@@ -34,8 +34,11 @@ ament_target_dependencies(stanley_node
 )
 
 add_executable(stanley_p2_node src/control_p2.cpp)
-ament_target_dependencies(stanley_p2_node rclcpp geometry_msgs std_msgs)
-
+ament_target_dependencies(stanley_p2_node
+  rclcpp
+  geometry_msgs
+  std_msgs
+)
 install(TARGETS
   stanley_p2_node
   DESTINATION lib/${PROJECT_NAME}
@@ -80,6 +83,13 @@ ament_target_dependencies(main_p2_controller
 install(TARGETS
   main_p2_controller
   DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(main_p3_controller src/main_p3.cpp)
+ament_target_dependencies(main_p3_controller
+  rclcpp
+  geometry_msgs
+  std_msgs      
 )
 
 install(DIRECTORY launch

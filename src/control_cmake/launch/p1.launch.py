@@ -18,7 +18,7 @@ def generate_launch_description():
     # 1. 메인 컨트롤러 (ID 100)
     main_control = Node(
         package='control_cmake',
-        executable='main_controller',
+        executable='main_p1_controller',
         name='main_controller',
         output='screen',
         additional_env={'ROS_DOMAIN_ID': '100'}
@@ -27,29 +27,25 @@ def generate_launch_description():
     # 2. Stanley 노드 cav1 (ID 1)
     stanley_cav_01 = Node(
         package='control_cmake',
-        executable='stanley_node',
+        executable='stanley_p1_node',
         name='stanley_controller_01', # 이름 구분
         namespace='CAV_01',           # 토픽 구분 (/CAV_01/...)
         output='screen',
-        parameters=[{'csv_path': 'tool/cav1.csv'}],
+        parameters=[{'csv_path': 'tool/cav1p1.csv'}],
         additional_env={'ROS_DOMAIN_ID': '1'},
-        remappings=[
-            ('/cmd_stop', '/CAV_01/cmd_stop')
-        ]
+       
     )
 
     # 3. Stanley 노드 cav2 (ID 2)
     stanley_cav_02 = Node(
         package='control_cmake',
-        executable='stanley_node',
+        executable='stanley_p1_node',
         name='stanley_controller_02', 
         namespace='CAV_02',           
         output='screen',
-        parameters=[{'csv_path': 'tool/cav2.csv'}],
+        parameters=[{'csv_path': 'tool/cav2p1.csv'}],
         additional_env={'ROS_DOMAIN_ID': '2'},
-        remappings=[
-            ('/cmd_stop', '/CAV_02/cmd_stop')
-        ]
+       
     )
 
    
