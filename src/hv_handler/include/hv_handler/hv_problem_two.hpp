@@ -35,8 +35,8 @@ public:
         }
 
         // default values
-        lane3_init_v_ = 0.5;
-        lane2_init_v_ = 0.75;
+        lane3_init_v_ = 0.8;
+        lane2_init_v_ = 0.5;
         lane3_ld_     = 0.3;
         lane2_ld_     = 0.3;
 

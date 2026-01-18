@@ -45,6 +45,7 @@ public:
             });
 
         // === 파라미터 설정 ===
+<<<<<<< chan
         this->declare_parameter("csv_path", "tool/p1_1.csv");
         this->declare_parameter("k_gain", 2.0);          // 2.0 ~ 2.5사이 어딘가로 맞추면 될 듯?
         this->declare_parameter("max_steer", 0.9);       // 최대 조향각 (rad) - 약 50도
@@ -56,6 +57,25 @@ public:
 
         // 파라미터 로드
         csv_path_ = this->get_parameter("csv_path").as_string();
+=======
+        // 기존 csv_path를 두 개로 분리
+        this->declare_parameter("original_way_path", "tool/cav1p3.csv");
+        this->declare_parameter("inside_way_path", "tool/cav1p3_inside.csv");
+        
+        this->declare_parameter("k_gain", 1.8);
+        this->declare_parameter("max_steer", 0.7);
+        this->declare_parameter("target_speed", 2.0);
+        this->declare_parameter("center_to_front", 0.17); // 차량 길이 관련
+        this->declare_parameter("wheelbase", 0.33);       // 카이스트 규정 0.33m
+        this->declare_parameter("steer_gain", 1.0);
+        this->declare_parameter("forward_step", 15);
+
+        // 파라미터 로드
+        original_csv_path_ = this->get_parameter("original_way_path").as_string();
+        inside_csv_path_ = this->get_parameter("inside_way_path").as_string();
+
+        
+>>>>>>> local
         k_gain_ = this->get_parameter("k_gain").as_double();
         max_steer_ = this->get_parameter("max_steer").as_double();
         target_speed_ = this->get_parameter("target_speed").as_double();

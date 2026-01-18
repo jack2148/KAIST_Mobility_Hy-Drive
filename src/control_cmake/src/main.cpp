@@ -17,6 +17,7 @@ enum class VehicleType {
     HV   // 제어 불가 (장애물/위협)
 };
 
+<<<<<<< chan
 struct VehicleState {
     double x, y;
     double speed;
@@ -28,6 +29,40 @@ struct VehicleState {
     bool is_stopped;
     VehicleType type; // 차량 타입 구분
 };
+=======
+class MainTrafficController : public rclcpp::Node {
+public:
+    MainTrafficController() : Node("main_traffic_controller") {
+        car_dims_ = {0.17, 0.16, 0.075, 0.075};
+        front_padding_ = 0.8;
+        side_padding_ = 0.6;
+        approach_range_sq_ = 2.0 * 2.0;
+
+        fourway_center_ = {-2.333, 0.0};
+        fourway_len_ = 2.0;
+        fourway_app_r_sq_ = 1.5 * 1.5;
+        fourway_box_half_len_ = fourway_len_ / 2.0;
+
+        round_center_ = {1.667, 0.0};
+        round_app_r_sq_ = 1.8 * 1.8;
+        round_radius_ = 1.4;
+
+        t3_box_x_min_ = -3.5; t3_box_x_max_ = -1.3;
+        t3_1_y_min_ = 1.6;    t3_1_y_max_ = 2.7;
+        t3_2_y_min_ = -2.7;   t3_2_y_max_ = -1.9;
+
+        tmr_discovery_ = create_wall_timer(
+            std::chrono::seconds(1),
+            std::bind(&MainTrafficController::discover_vehicles, this)
+        );
+        tmr_control_ = create_wall_timer(
+            std::chrono::milliseconds(20),
+            std::bind(&MainTrafficController::control_loop, this)
+        );
+
+        RCLCPP_INFO(get_logger(), "Controller Started: Deadlock Resolution Logic Fixed.");
+    }
+>>>>>>> local
 
 class MainTrafficController : public rclcpp::Node
 {
