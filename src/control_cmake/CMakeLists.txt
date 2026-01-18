@@ -1,0 +1,102 @@
+cmake_minimum_required(VERSION 3.5)
+project(control_cmake)
+
+# Default to C99
+if(NOT CMAKE_C_STANDARD)
+  set(CMAKE_C_STANDARD 99)
+endif()
+
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+
+# --- 정상 작동하는 노드들 ---
+add_executable(stanley_node src/control_stanley.cpp)
+ament_target_dependencies(stanley_node
+  rclcpp
+  geometry_msgs
+  std_msgs
+  tf2
+  tf2_geometry_msgs
+)
+
+add_executable(stanley_p2_node src/control_p2.cpp)
+ament_target_dependencies(stanley_p2_node rclcpp geometry_msgs std_msgs)
+
+install(TARGETS
+  stanley_p2_node
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+add_executable(main_controller src/main.cpp)
+ament_target_dependencies(main_controller
+  rclcpp
+  geometry_msgs
+  std_msgs      
+)
+
+# --- 여기서부터 소스 파일이 없어 에러가 나는 부분입니다. 전부 주석 처리했습니다. ---
+
+# add_executable(stanley_node2 src/control_stanley2.cpp)
+# ament_target_dependencies(stanley_node2
+#   rclcpp
+#   geometry_msgs
+#   std_msgs
+#   tf2
+#   tf2_geometry_msgs
+#   nav_msgs
+# )
+
+# add_executable(main_controller2 src/main2.cpp)
+# ament_target_dependencies(main_controller2
+#   rclcpp
+#   geometry_msgs
+#   std_msgs        
+#   nav_msgs
+# )
+
+# --- 다시 정상 작동하는 노드 ---
+
+add_executable(main_p2_controller src/main_p2.cpp)
+ament_target_dependencies(main_p2_controller
+  rclcpp
+  geometry_msgs
+  std_msgs
+)
+
+install(TARGETS
+  main_p2_controller
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
+endif()
+
+install(TARGETS
+  stanley_node
+  main_controller
+#  stanley_node2
+#  main_controller2
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+ament_package()

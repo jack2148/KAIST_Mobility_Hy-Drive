@@ -1,0 +1,66 @@
+name: domain_manage
+from_domain: 100    # 기본값: Main(100) -> Stanley(1) 방향
+
+topics:
+  # ==========================================
+  # [CAV 01] 문제 2 해결을 위한 필수 토픽 추가
+  # ==========================================
+  
+  # 1. Main(100) -> Stanley(1) : 명령 전달
+  /CAV_01/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 1
+  
+  /CAV_01/cmd_speed:   # [추가] 속도 명령 (이게 없어서 폭주했음)
+    type: std_msgs/msg/Float64
+    to_domain: 1
+
+  /CAV_01/cmd_lane:    # [추가] 차선 변경 명령
+    type: std_msgs/msg/Int32
+    to_domain: 1
+
+  /Ego_pose:           # [추가] 내 위치 정보
+    type: geometry_msgs/msg/PoseStamped
+    to_domain: 1
+
+  # 2. Stanley(1) -> Simulator(100) : 구동 전달
+  /Accel:              # [추가] 가속/조향 명령 (이게 없어서 안 움직임)
+    type: geometry_msgs/msg/Accel
+    from_domain: 1     # ★ 중요: 이건 1번에서 100번으로 보내야 함
+    to_domain: 100
+
+  # ==========================================
+  # [CAV 02 ~ 04] 기존 설정 유지 (건드리지 않음)
+  # ==========================================
+  
+  # 1. CAV 01 (기존에 있던 waypoint 관련)
+  /CAV_01/change_waypoint:
+    type: std_msgs/msg/Bool
+    to_domain: 1
+
+  # 2. CAV 02 
+  /CAV_02/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 2
+
+  /CAV_02/change_waypoint:
+    type: std_msgs/msg/Bool
+    to_domain: 2
+
+  # 3. CAV 03 
+  /CAV_03/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 3
+
+  /CAV_03/change_waypoint:
+    type: std_msgs/msg/Bool
+    to_domain: 3
+
+  # 4. CAV 04 
+  /CAV_04/cmd_stop:
+    type: std_msgs/msg/Bool
+    to_domain: 4
+
+  /CAV_04/change_waypoint:
+    type: std_msgs/msg/Bool
+    to_domain: 4
