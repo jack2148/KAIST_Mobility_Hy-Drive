@@ -215,9 +215,9 @@ private:
 
         if (type == VehicleType::CAV) {
             cav_subs_[id] = sub;
-            stop_pubs_[id] = this->create_publisher<std_msgs::msg::Bool>(id + "/cmd_stop", qos_);
-            speed_pubs_[id] = this->create_publisher<std_msgs::msg::Float64>(id + "/cmd_speed", qos_);
-            lane_pubs_[id] = this->create_publisher<std_msgs::msg::Int32>(id + "/cmd_lane", qos_);
+            stop_pubs_[id] = this->create_publisher<std_msgs::msg::Bool>("/"+id + "/cmd_stop", qos_);
+            speed_pubs_[id] = this->create_publisher<std_msgs::msg::Float64>("/"+id + "/cmd_speed", qos_);
+            lane_pubs_[id] = this->create_publisher<std_msgs::msg::Int32>("/"+id + "/cmd_lane", qos_);
         } else {
             hv_subs_[id] = sub;
         }

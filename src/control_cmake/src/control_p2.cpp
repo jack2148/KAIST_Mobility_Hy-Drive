@@ -38,17 +38,17 @@ public:
         pub_accel_ = this->create_publisher<geometry_msgs::msg::Accel>("/Accel", qos_profile);
 
         sub_stop_cmd_ = this->create_subscription<std_msgs::msg::Bool>(
-            "/CAV_01/cmd_stop", qos_profile, 
+            "cmd_stop", qos_profile, 
             [this](const std_msgs::msg::Bool::SharedPtr msg) { this->stop_signal_ = msg->data; });
 
         sub_lane_cmd_ = this->create_subscription<std_msgs::msg::Int32>(
-            "/CAV_01/cmd_lane", qos_profile,
+            "cmd_lane", qos_profile,
             [this](const std_msgs::msg::Int32::SharedPtr msg) {
                 current_waypoints_ = (msg->data == 1) ? &waypoints_lane1_ : &waypoints_lane2_;
             });
 
         sub_speed_cmd_ = this->create_subscription<std_msgs::msg::Float64>(
-            "/CAV_01/cmd_speed", qos_profile,
+            "cmd_speed", qos_profile,
             [this](const std_msgs::msg::Float64::SharedPtr msg) {
                 this->target_speed_ = msg->data;
             });
