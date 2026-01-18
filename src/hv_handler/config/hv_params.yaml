@@ -1,10 +1,10 @@
 problem_two:
   lane_three:
-    init_speed: 0.5
-    lookahead: 0.3
+    init_speed: 1.2
+    lookahead: 0.5 #0.3
   lane_two:
-    init_speed: 0.75
-    lookahead: 0.3
+    init_speed: 1.0
+    lookahead: 0.5 #0.3
     
 problem_three:
   roundabout:
