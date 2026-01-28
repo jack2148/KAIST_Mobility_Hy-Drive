@@ -34,7 +34,6 @@ def generate_launch_description():
             'csv_path_1': 'tool/JSp2Lane1.csv',  # 안쪽(추월) 경로
             'csv_path_2': 'tool/JSp2Lane2.csv',  # 바깥쪽(주행) 경로  slop2.csv
             'merge_csv_path': 'tool/JSp2merge.csv',
-            'target_speed': 1.3,              # 초기 속도
             'k_gain': 1.3
         }],
         additional_env={'ROS_DOMAIN_ID': '1'},
